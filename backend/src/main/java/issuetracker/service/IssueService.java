@@ -1,6 +1,8 @@
 package issuetracker.service;
 
 import issuetracker.dto.*;
+import issuetracker.messaging.EventPublisher;
+import issuetracker.messaging.IssueEvent;
 import issuetracker.model.*;
 import issuetracker.repository.*;
 import org.springframework.http.HttpStatus;
@@ -33,11 +35,12 @@ public class IssueService {
     private final AssignmentRepository assignments;
     private final IssueUpdateRepository updates;
     private final ActivityService activity;
+    private final EventPublisher events;
 
     public IssueService(IssueRepository issues, CategoryRepository categories,
                         LocationRepository locations, UserRepository users,
                         AssignmentRepository assignments, IssueUpdateRepository updates,
-                        ActivityService activity) {
+                        ActivityService activity, EventPublisher events) {
         this.issues = issues;
         this.categories = categories;
         this.locations = locations;
@@ -45,6 +48,7 @@ public class IssueService {
         this.assignments = assignments;
         this.updates = updates;
         this.activity = activity;
+        this.events = events;
     }
 
     @Transactional
@@ -81,6 +85,7 @@ public class IssueService {
         details.put("location", location.displayName());
         activity.record(issue.getId(), "CREATED", reporter, details);
 
+        notifyReporter(issue, "CREATED", "Your issue was received");
         return toResponse(issue);
     }
 
@@ -143,6 +148,7 @@ public class IssueService {
         details.put("to", "ASSIGNED");
         activity.record(issueId, "ASSIGNED", admin, details);
 
+        notifyReporter(issue, "ASSIGNED", "Your issue was assigned to " + assignee.getEmail());
         return toResponse(issue);
     }
 
@@ -193,6 +199,7 @@ public class IssueService {
         if (comment != null) details.put("comment", comment);
         activity.record(issueId, "STATUS_CHANGED", actor, details);
 
+        notifyReporter(issue, "STATUS_CHANGED", "Status changed from " + from + " to " + to);
         return toResponse(issue);
     }
 
@@ -214,6 +221,12 @@ public class IssueService {
     }
 
     // ---- helpers ----
+
+    private void notifyReporter(Issue issue, String type, String message) {
+        User r = issue.getReporter();
+        events.publish(new IssueEvent(type, issue.getId(), issue.getCode(), issue.getTitle(),
+                issue.getStatus(), r.getEmail(), r.getPhone(), message));
+    }
 
     private boolean seesAll(String role) {
         return role.equals("ADMIN") || role.equals("MANAGEMENT");
