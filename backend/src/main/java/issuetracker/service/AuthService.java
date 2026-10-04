@@ -1,11 +1,14 @@
 package issuetracker.service;
 
+import issuetracker.dto.LoginRequest;
+import issuetracker.dto.LoginResponse;
 import issuetracker.dto.RegisterRequest;
 import issuetracker.dto.UserResponse;
 import issuetracker.model.Role;
 import issuetracker.model.User;
 import issuetracker.repository.RoleRepository;
 import issuetracker.repository.UserRepository;
+import issuetracker.security.JwtService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,13 +24,16 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthService(UserRepository userRepository,
                        RoleRepository roleRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public UserResponse register(RegisterRequest req) {
@@ -62,5 +68,21 @@ public class AuthService {
         User saved = userRepository.save(user);
         return new UserResponse(saved.getId(), saved.getFirstName(), saved.getLastName(),
                 saved.getEmail(), saved.getRole().getName());
+    }
+
+    public LoginResponse login(LoginRequest req) {
+        String email = req.email().trim().toLowerCase();
+
+        User user = userRepository.findByEmail(email)
+                .filter(User::isActive)
+                .filter(u -> u.getPasswordHash() != null
+                        && passwordEncoder.matches(req.password(), u.getPasswordHash()))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Invalid email or password"));
+
+        UserResponse profile = new UserResponse(user.getId(), user.getFirstName(),
+                user.getLastName(), user.getEmail(), user.getRole().getName());
+        return new LoginResponse(jwtService.generate(user), "Bearer",
+                jwtService.expiresInSeconds(), profile);
     }
 }
