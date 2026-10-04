@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -31,6 +32,14 @@ public class ApiExceptionHandler {
                 .forEach(e -> fieldErrors.putIfAbsent(e.getField(), e.getDefaultMessage()));
         return ResponseEntity.badRequest()
                 .body(body(HttpStatus.BAD_REQUEST, "Validation failed", req.getRequestURI(), fieldErrors));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleDenied(AccessDeniedException ex,
+                                                            HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(body(HttpStatus.FORBIDDEN, "You do not have permission to do this",
+                        req.getRequestURI(), null));
     }
 
     private Map<String, Object> body(HttpStatus status, String message, String path,
