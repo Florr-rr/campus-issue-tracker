@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FixIt Campus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14213d;--paper:#f3f5f7;--card:#fff;--line:#d9dee5;--muted:#5b6678;--signal:#f2c230;--blue:#2457c5;--green:#1c7a4c;--red:#b3261e}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Public Sans",system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.side{background:var(--ink);color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+.brand{font-weight:700;font-size:20px;padding:0 8px 18px;display:flex;align-items:center;gap:10px}
+.brand b{width:14px;height:26px;background:repeating-linear-gradient(135deg,var(--signal) 0 5px,var(--ink) 5px 9px);border:1px solid var(--signal)}
+.nav{background:none;border:0;border-left:4px solid transparent;color:#cfd6e6;text-align:left;padding:10px 12px;cursor:pointer;border-radius:0 6px 6px 0}
+.nav.on{background:#22335c;border-left-color:var(--signal);color:#fff;font-weight:500}
+.who{margin-top:auto;font-size:14px;color:#aab4cc;padding:8px}
+.who button{background:none;border:0;color:var(--signal);cursor:pointer;padding:0;text-decoration:underline}
+main.pane{padding:28px;max-width:900px;width:100%}
+h1,h2,h3{margin:0 0 8px;line-height:1.2}
+h2{font-size:24px}h3{font-size:17px;margin-top:26px}
+.muted,small{color:var(--muted)}
+.note{background:#fff7d6;border:1px solid var(--signal);padding:8px 12px;border-radius:6px;font-size:14px;margin-bottom:18px}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.row{width:100%;display:grid;grid-template-columns:84px 1fr 80px 120px;gap:12px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer}
+.row:hover{border-color:var(--ink)}
+.ttl{display:grid}
+.code{font-size:13px;color:var(--muted);font-weight:500}
+.pri{font-size:13px}.pri.URGENT,.pri.HIGH{color:var(--red);font-weight:700}
+.badge{font-size:13px;padding:3px 10px;border-radius:99px;text-align:center;font-weight:500;white-space:nowrap;justify-self:start}
+.SUBMITTED{background:#e6e9ef}.ASSIGNED{background:#dbe7ff;color:#173a8a}.IN_PROGRESS{background:#fff0c2;color:#6b4a00}
+.RESOLVED{background:#d7f0e1;color:#124d30}.CLOSED{background:#d9dee5;color:#3b4456}.REOPENED{background:#fbd9d6;color:#7a1914}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:14px;max-width:560px}
+label{display:grid;gap:4px;font-weight:500;font-size:15px}
+input,select,textarea{border:1px solid #aeb6c4;border-radius:6px;padding:9px 10px;background:#fff;font-weight:400}
+textarea{min-height:90px;resize:vertical}
+fieldset{border:1px solid var(--line);border-radius:8px;display:flex;flex-wrap:wrap;gap:12px;padding:10px 12px}
+.chip{display:flex;grid-auto-flow:column;align-items:center;gap:6px;font-weight:400}
+.btn{border:1px solid var(--ink);background:#fff;border-radius:6px;padding:9px 16px;cursor:pointer;font-weight:500}
+.btn.primary{background:var(--ink);color:#fff}
+.link{background:none;border:0;color:var(--blue);cursor:pointer;padding:0 0 12px;text-decoration:underline}
+.err{color:var(--red);font-size:14px;margin:0}
+.dhead{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.actions{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:18px 0}
+.timeline{margin:0;padding:0 0 0 18px;border-left:3px solid var(--signal);list-style:none;display:grid;gap:10px}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 18px}.stat b{font-size:28px;display:block}
+.bar{display:grid;grid-template-columns:120px 1fr 28px;gap:10px;align-items:center;margin:6px 0;font-size:14px}
+.bar i{display:block;height:12px;background:var(--blue);border-radius:2px}
+.empty{background:var(--card);border:1px dashed #aeb6c4;border-radius:8px;padding:24px}
+.toast{position:fixed;right:16px;top:16px;background:var(--ink);color:#fff;padding:10px 16px;border-radius:6px;z-index:5}
+.login{max-width:560px;margin:8vh auto;padding:0 18px}
+.login h1{font-size:34px}.lead{margin:0 0 20px;color:var(--muted)}
+@media (max-width:760px){
+ .app{grid-template-columns:1fr}
+ .side{position:fixed;bottom:0;left:0;right:0;flex-direction:row;padding:6px;z-index:4;justify-content:space-around}
+ .brand,.who{display:none}
+ .nav{border-left:0;border-top:4px solid transparent;border-radius:0;text-align:center;padding:8px 10px;font-size:14px}
+ .nav.on{border-top-color:var(--signal)}
+ main.pane{padding:18px 16px 90px}
+ .row{grid-template-columns:1fr auto}
+ .row .ttl{grid-column:1/-1;order:2}.row .code{order:1}.row .pri{display:none}.row .badge{order:1;justify-self:end}
+ .bar{grid-template-columns:90px 1fr 24px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+const STATUS={SUBMITTED:'Submitted',ASSIGNED:'Assigned',IN_PROGRESS:'In progress',RESOLVED:'Resolved',CLOSED:'Closed',REOPENED:'Reopened'};
+const CATS=['Electrical','Plumbing','ICT/Network','Furniture','Cleaning','Buildings','Other'];
+const LOCS=['Library','Block A, A101','Block B, B204','Cafeteria'];
+const TECHS=['Aline M.','Eric N.'];
+const ROLES=[{k:'STUDENT',n:'Student'},{k:'MAINTENANCE',n:'Maintenance staff'},{k:'ADMIN',n:'Administrator'}];
+const WHO={STUDENT:'You',MAINTENANCE:'Aline M.',ADMIN:'Admin'};
+const ME='Aline M.';
+const SEED=[
+ {id:1,code:'ISS-00001',title:'Projector not working',cat:'ICT/Network',loc:'Block B, B204',pri:'HIGH',status:'IN_PROGRESS',mine:true,tech:'Aline M.',desc:'The projector turns on but shows nothing on screen.',log:[{who:'You',txt:'reported the issue'},{who:'Admin',txt:'assigned it to Aline M.'},{who:'Aline M.',txt:'started work'}]},
+ {id:2,code:'ISS-00002',title:'Leaking tap in cafeteria',cat:'Plumbing',loc:'Cafeteria',pri:'MEDIUM',status:'SUBMITTED',mine:false,tech:null,desc:'The second tap from the left drips constantly.',log:[{who:'Student',txt:'reported the issue'}]},
+ {id:3,code:'ISS-00003',title:'Flickering lights',cat:'Electrical',loc:'Library',pri:'LOW',status:'ASSIGNED',mine:false,tech:'Aline M.',desc:'Three ceiling lights flicker near the study desks.',log:[{who:'Student',txt:'reported the issue'},{who:'Admin',txt:'assigned it to Aline M.'}]},
+ {id:4,code:'ISS-00004',title:'Wi-Fi down in Block A',cat:'ICT/Network',loc:'Block A, A101',pri:'URGENT',status:'RESOLVED',mine:true,tech:'Aline M.',desc:'No Wi-Fi signal in the classroom since morning.',log:[{who:'You',txt:'reported the issue'},{who:'Admin',txt:'assigned it to Aline M.'},{who:'Aline M.',txt:'marked it resolved: access point restarted'}]}
+];
+const Badge=({s})=><span className={"badge "+s}>{STATUS[s]}</span>;
+
+function Login({onLogin}){
+ const [role,setRole]=useState('STUDENT');
+ return <main className="login">
+  <h1>FixIt Campus</h1>
+  <p className="lead">Report a campus problem and follow it until it is fixed.</p>
+  <form className="card" onSubmit={e=>{e.preventDefault();onLogin(role)}}>
+   <label>Email<input type="email" defaultValue="you@campus.example" required/></label>
+   <label>Password<input type="password" defaultValue="password" required/></label>
+   <fieldset><legend>Preview as</legend>
+    {ROLES.map(r=><label key={r.k} className="chip"><input type="radio" name="role" checked={role===r.k} onChange={()=>setRole(r.k)}/>{r.n}</label>)}
+   </fieldset>
+   <button className="btn primary">Sign in</button>
+  </form>
+ </main>;
+}
+
+function List({items,onOpen}){
+ if(!items.length) return <p className="empty">No issues here yet.</p>;
+ return <ul className="list">{items.map(i=><li key={i.id}><button className="row" onClick={()=>onOpen(i.id)}>
+  <span className="code">{i.code}</span>
+  <span className="ttl"><strong>{i.title}</strong><small>{i.cat} in {i.loc}</small></span>
+  <span className={"pri "+i.pri}>{i.pri.toLowerCase()}</span>
+  <Badge s={i.status}/>
+ </button></li>)}</ul>;
+}
+
+function Detail({i,role,act,back}){
+ const [tech,setTech]=useState(TECHS[0]);
+ const st=i.status;
+ return <section>
+  <button className="link" onClick={back}>Back to list</button>
+  <header className="dhead"><div><span className="code">{i.code}</span><h2>{i.title}</h2><p className="muted">{i.cat} in {i.loc}</p></div><Badge s={st}/></header>
+  <p>{i.desc}</p>
+  <div className="actions">
+   {role==='ADMIN'&&(st==='SUBMITTED'||st==='ASSIGNED')&&<>
+    <label>Assign to<select value={tech} onChange={e=>setTech(e.target.value)}>{TECHS.map(t=><option key={t}>{t}</option>)}</select></label>
+    <button className="btn primary" onClick={()=>act(i.id,'ASSIGNED','assigned it to '+tech,{tech})}>Assign issue</button></>}
+   {role==='MAINTENANCE'&&(st==='ASSIGNED'||st==='REOPENED')&&<button className="btn primary" onClick={()=>act(i.id,'IN_PROGRESS','started work')}>Start work</button>}
+   {role==='MAINTENANCE'&&st==='IN_PROGRESS'&&<button className="btn primary" onClick={()=>act(i.id,'RESOLVED','marked it resolved')}>Mark resolved</button>}
+   {role==='STUDENT'&&i.mine&&st==='RESOLVED'&&<>
+    <button className="btn primary" onClick={()=>act(i.id,'CLOSED','confirmed the fix')}>Confirm it is fixed</button>
+    <button className="btn" onClick={()=>act(i.id,'REOPENED','reopened the issue')}>Reopen</button></>}
+  </div>
+  <h3>Timeline</h3>
+  <ol className="timeline">{i.log.map((l,k)=><li key={k}><strong>{l.who}</strong> {l.txt}</li>)}</ol>
+ </section>;
+}
+
+function NewIssue({onCreate}){
+ const [f,setF]=useState({title:'',cat:CATS[0],loc:LOCS[0],pri:'MEDIUM',desc:''});
+ const [err,setErr]=useState('');
+ const set=k=>e=>{setF({...f,[k]:e.target.value});setErr('')};
+ const submit=e=>{e.preventDefault();
+  if(f.title.trim().length<5||f.desc.trim().length<10){setErr('Add a title of at least 5 characters and a description of at least 10.');return}
+  onCreate(f)};
+ return <form className="card" onSubmit={submit}>
+  <label>Title<input value={f.title} onChange={set('title')} placeholder="Projector not working"/></label>
+  <label>Category<select value={f.cat} onChange={set('cat')}>{CATS.map(c=><option key={c}>{c}</option>)}</select></label>
+  <label>Location<select value={f.loc} onChange={set('loc')}>{LOCS.map(c=><option key={c}>{c}</option>)}</select></label>
+  <label>Priority<select value={f.pri} onChange={set('pri')}>{['LOW','MEDIUM','HIGH','URGENT'].map(c=><option key={c} value={c}>{c.toLowerCase()}</option>)}</select></label>
+  <label>What is wrong?<textarea value={f.desc} onChange={set('desc')}/></label>
+  {err&&<p className="err" role="alert">{err}</p>}
+  <button className="btn primary">Submit report</button>
+ </form>;
+}
+
+function Dash({issues}){
+ const by=k=>issues.reduce((m,i)=>(m[i[k]]=(m[i[k]]||0)+1,m),{});
+ const st=by('status'),ct=by('cat');
+ const max=Math.max(1,...Object.values(st),...Object.values(ct));
+ const open=issues.filter(i=>!['RESOLVED','CLOSED'].includes(i.status)).length;
+ const Bars=({d,label})=>Object.entries(d).map(([k,v])=><div className="bar" key={k}><span>{label?label[k]:k}</span><i style={{width:(v/max*100)+'%'}}/><b>{v}</b></div>);
+ return <section>
+  <h2>Dashboard</h2>
+  <div className="stats"><div className="stat"><b>{issues.length}</b>Total issues</div><div className="stat"><b>{open}</b>Still open</div></div>
+  <h3>By status</h3><Bars d={st} label={STATUS}/>
+  <h3>By category</h3><Bars d={ct}/>
+ </section>;
+}
+
+function App(){
+ const [role,setRole]=useState(null);
+ const [view,setView]=useState('list');
+ const [sel,setSel]=useState(null);
+ const [issues,setIssues]=useState(SEED);
+ const [msg,setMsg]=useState('');
+ if(!role) return <Login onLogin={r=>{setRole(r);setView(r==='ADMIN'?'dash':'list')}}/>;
+ const flash=t=>{setMsg(t);setTimeout(()=>setMsg(''),2500)};
+ const act=(id,status,txt,extra={})=>{
+  setIssues(issues.map(i=>i.id===id?{...i,...extra,status,log:[...i.log,{who:WHO[role],txt}]}:i));
+  flash('Done: '+txt)};
+ const create=f=>{
+  const id=issues.length+1;
+  setIssues([{id,code:'ISS-'+String(id).padStart(5,'0'),title:f.title,cat:f.cat,loc:f.loc,pri:f.pri,desc:f.desc,status:'SUBMITTED',mine:true,tech:null,log:[{who:'You',txt:'reported the issue'}]},...issues]);
+  setView('list');flash('Report submitted')};
+ const visible=issues.filter(i=>role==='ADMIN'||(role==='STUDENT'&&i.mine)||(role==='MAINTENANCE'&&i.tech===ME));
+ const nav=[...(role==='ADMIN'?[['dash','Dashboard']]:[]),['list',role==='ADMIN'?'All issues':role==='MAINTENANCE'?'Assigned to me':'My issues'],...(role==='STUDENT'?[['new','Report issue']]:[])];
+ const open=id=>{setSel(id);setView('detail')};
+ const cur=issues.find(i=>i.id===sel);
+ return <div className="app">
+  <nav className="side" aria-label="Main">
+   <div className="brand"><b/>FixIt Campus</div>
+   {nav.map(([k,n])=><button key={k} className={"nav"+(view===k||(view==='detail'&&k==='list')?' on':'')} onClick={()=>setView(k)}>{n}</button>)}
+   <div className="who">{ROLES.find(r=>r.k===role).n}<br/><button onClick={()=>setRole(null)}>Sign out</button></div>
+  </nav>
+  <main className="pane">
+   <p className="note">Prototype with sample data. The next step connects these screens to the Spring Boot API.</p>
+   {view==='dash'&&<Dash issues={issues}/>}
+   {view==='list'&&<><h2>{nav.find(n=>n[0]==='list')[1]}</h2><List items={visible} onOpen={open}/></>}
+   {view==='new'&&<><h2>Report an issue</h2><NewIssue onCreate={create}/></>}
+   {view==='detail'&&cur&&<Detail i={cur} role={role} act={act} back={()=>setView('list')}/>}
+  </main>
+  {msg&&<div className="toast" role="status">{msg}</div>}
+ </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
