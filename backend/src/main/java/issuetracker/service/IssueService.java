@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,16 +32,19 @@ public class IssueService {
     private final UserRepository users;
     private final AssignmentRepository assignments;
     private final IssueUpdateRepository updates;
+    private final ActivityService activity;
 
     public IssueService(IssueRepository issues, CategoryRepository categories,
                         LocationRepository locations, UserRepository users,
-                        AssignmentRepository assignments, IssueUpdateRepository updates) {
+                        AssignmentRepository assignments, IssueUpdateRepository updates,
+                        ActivityService activity) {
         this.issues = issues;
         this.categories = categories;
         this.locations = locations;
         this.users = users;
         this.assignments = assignments;
         this.updates = updates;
+        this.activity = activity;
     }
 
     @Transactional
@@ -69,6 +73,14 @@ public class IssueService {
         issue = issues.save(issue);
 
         recordUpdate(issue, reporter, null, "SUBMITTED", null);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("title", issue.getTitle());
+        details.put("priority", priority);
+        details.put("category", category.getName());
+        details.put("location", location.displayName());
+        activity.record(issue.getId(), "CREATED", reporter, details);
+
         return toResponse(issue);
     }
 
@@ -124,6 +136,13 @@ public class IssueService {
         issue.setStatus("ASSIGNED");
         issues.save(issue);
         recordUpdate(issue, admin, old, "ASSIGNED", "Assigned to " + assignee.getEmail());
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("assignedTo", assignee.getEmail());
+        details.put("from", old);
+        details.put("to", "ASSIGNED");
+        activity.record(issueId, "ASSIGNED", admin, details);
+
         return toResponse(issue);
     }
 
@@ -167,7 +186,31 @@ public class IssueService {
 
         String comment = (req.comment() == null || req.comment().isBlank()) ? null : req.comment().trim();
         recordUpdate(issue, actor, from, to, comment);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("from", from);
+        details.put("to", to);
+        if (comment != null) details.put("comment", comment);
+        activity.record(issueId, "STATUS_CHANGED", actor, details);
+
         return toResponse(issue);
+    }
+
+    @Transactional(readOnly = true)
+    public ActivityResponse addComment(Long userId, String role, Long issueId, String text) {
+        Issue issue = find(issueId);
+        requireVisible(issue, userId, role);
+        User author = users.findById(userId).orElseThrow(() -> unauthorized());
+        Map<String, Object> details = new HashMap<>();
+        details.put("text", text.trim());
+        return activity.record(issue.getId(), "COMMENT", author, details);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActivityResponse> activity(Long userId, String role, Long issueId) {
+        Issue issue = find(issueId);
+        requireVisible(issue, userId, role);
+        return activity.feed(issue.getId());
     }
 
     // ---- helpers ----

@@ -51,6 +51,18 @@ public class IssueController {
         return service.assign(userId(jwt), id, request.assigneeId());
     }
 
+    @PostMapping("/{id}/comments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ActivityResponse comment(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                    @Valid @RequestBody CommentRequest request) {
+        return service.addComment(userId(jwt), role(jwt), id, request.text());
+    }
+
+    @GetMapping("/{id}/activity")
+    public List<ActivityResponse> activity(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return service.activity(userId(jwt), role(jwt), id);
+    }
+
     private Long userId(Jwt jwt) {
         return Long.valueOf(jwt.getSubject());
     }
